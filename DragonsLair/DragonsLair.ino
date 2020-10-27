@@ -7,9 +7,9 @@
 #define FIRE_DURATION 1300
 #define POISON_DURATION 3000
 #define VOID_DURATION 5000
-#define FIRE_DELAY_TIME 90
+#define FIRE_DELAY_TIME 0
 #define FIRE_EXTRA_TIME 1000
-#define VOID_DELAY_TIME 90
+#define VOID_DELAY_TIME 0
 #define VOID_EXTRA_TIME 3000
 #define POISON_DELAY_TIME 500
 #define POISON_EXTRA_TIME 4000
@@ -257,47 +257,47 @@ void fireLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-          attackSignal = FIRE;
-        }
-      }
-    }
-  }
+
+//  FOREACH_FACE(f) {
+//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+//          attackSignal = FIRE;
+//        }
+//      }
+//    }
+//  }
 }
 
 void poisonLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-          attackSignal = POISON;
-        }
-      }
-    }
-  }
+  
+//  FOREACH_FACE(f) {
+//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+//          attackSignal = POISON;
+//        }
+//      }
+//    }
+//  }
 }
-
-// PUT miningLoop() IN VOID LOOP
 
 void voidLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-          attackSignal = VOID;
-        }
-      }
-    }
-  }
+//  FOREACH_FACE(f) {
+//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+//          attackSignal = VOID;
+//        }
+//      }
+//    }
+//  }
 
 }
 

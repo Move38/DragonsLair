@@ -165,17 +165,15 @@ void inertLoop() {
   if (isDragon) {
     if (dragonWaitTimer.isExpired()) {
 
-      byte maybeAttack = random(100);
-      if (maybeAttack > 40) {
+      if (random(100) > 40) {
         if (noNeighborsAttacking()) {
-          byte whichAttack = nextAttack;
-          if (whichAttack == POISON) {
+          if (nextAttack == POISON) {
             attackSignal = POISON;
             extraTime = POISON_EXTRA_TIME;
-          } else if (whichAttack == FIRE) {
+          } else if (nextAttack == FIRE) {
             attackSignal = FIRE;
             extraTime = FIRE_EXTRA_TIME;
-          } else if (whichAttack == VOID) {
+          } else if (nextAttack == VOID) {
             attackSignal = VOID;
             extraTime = VOID_EXTRA_TIME;
           }
@@ -445,7 +443,7 @@ void displayLoop() {
 
 void playerDisplay() {
   if (isDead) {
-    setColor(WHITE);
+    scoreDisplay();
   } else {
     setColor(FIELD_COLOR);
     setColorOnFace(RED, 0);
@@ -461,6 +459,9 @@ void playerDisplay() {
   }
 }
 
+void scoreDisplay() {
+  setColor(WHITE);
+}
 
 #define FIRE_HUE_MIN 0
 #define FIRE_HUE_MAX 25

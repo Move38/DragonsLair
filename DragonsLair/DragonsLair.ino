@@ -41,6 +41,8 @@ int playerScore = 0;
 byte ignoredFaces[6] = {0, 0, 0, 0, 0, 0};
 byte luck = 3;
 bool isDead = false;
+Timer damageAnimTimer;
+#define DAMAGE_ANIM_TIME 700
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 Color treasureColor[3] = {RED, GREEN, YELLOW};
@@ -129,9 +131,15 @@ void loop() {
   //sets the player piece
   if (isAlone()) {
     if (buttonDoubleClicked()) {
-      blinkType = PLAYER;
-      isDead = false;
-      luck = 3;
+      if (blinkType == PLAYER) {
+        blinkType = FIELD;
+
+      } else if (blinkType == FIELD) {
+        blinkType = PLAYER;
+        isDead = false;
+        luck = 3;
+      }
+
     }
   }
 
@@ -159,7 +167,7 @@ void inertLoop() {
 
       byte maybeAttack = random(100);
       if (maybeAttack > 40) {
-        if (noNeighborsAttacking) {
+        if (noNeighborsAttacking()) {
           byte whichAttack = nextAttack;
           if (whichAttack == POISON) {
             attackSignal = POISON;
@@ -244,8 +252,9 @@ void inertLoop() {
       if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
         if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
           if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
-            if (ignoredFaces[f] == 0) {
+            if (ignoredFaces[f] == 0) {//take damage
               luck--;
+              damageAnimTimer.set(DAMAGE_ANIM_TIME);
               ignoredFaces[f] = 1;
             }
           }
@@ -269,8 +278,9 @@ void inertLoop() {
             }
             playerFaceSignal[f] = CORRECT;
           } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
-            if (ignoredFaces[f] == 0) {
+            if (ignoredFaces[f] == 0) {//take damage
               luck--;
+              damageAnimTimer.set(DAMAGE_ANIM_TIME);
               ignoredFaces[f] = 1;
             }
             playerFaceSignal[f] = INCORRECT;
@@ -287,6 +297,8 @@ void inertLoop() {
 void fireLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
+    treasureType = 0;
+    treasureSpawnTimer.set(TREASURE_SPAWN_TIME);
   }
 
   //  FOREACH_FACE(f) {
@@ -400,14 +412,15 @@ void displayLoop() {
     //setColor(MAGENTA);
     dragonDisplay();
   } else if (blinkType == PLAYER) {
-    if (isDead) {
-      setColor(WHITE);
-    } else {
-      setColor(FIELD_COLOR);
-      setColorOnFace(RED, 0);
-      setColorOnFace(GREEN, 2);
-      setColorOnFace(YELLOW, 4);
-    }
+    playerDisplay();
+    //    if (isDead) {
+    //      setColor(WHITE);
+    //    } else {
+    //      setColor(FIELD_COLOR);
+    //      setColorOnFace(RED, 0);
+    //      setColorOnFace(GREEN, 2);
+    //      setColorOnFace(YELLOW, 4);
+    //    }
   } else if (blinkType == FIELD) {
     switch (attackSignal) {
       case FIRE:
@@ -429,6 +442,25 @@ void displayLoop() {
 
 
 }
+
+void playerDisplay() {
+  if (isDead) {
+    setColor(WHITE);
+  } else {
+    setColor(FIELD_COLOR);
+    setColorOnFace(RED, 0);
+    setColorOnFace(GREEN, 2);
+    setColorOnFace(YELLOW, 4);
+  }
+
+  if (!damageAnimTimer.isExpired()) {//we are currently taking damage
+    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
+    setColorOnFace(OFF, spinFace & 6);
+    setColorOnFace(OFF, (spinFace + 2) % 6);
+    setColorOnFace(OFF, (spinFace + 4) % 6);
+  }
+}
+
 
 #define FIRE_HUE_MIN 0
 #define FIRE_HUE_MAX 25
@@ -532,8 +564,6 @@ void fieldDisplay() {
       //here's where we need to light up the special dragon neighbors
       if (getDragonMessage(getLastValueReceivedOnFace(f)) == true) {
         dragonFaceProgress[f] = 255;
-        dragonFaceProgress[(f + 1) % 6] = 255;
-        dragonFaceProgress[(f + 5) % 6] = 255;
       }
 
     } else {

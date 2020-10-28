@@ -61,6 +61,7 @@ Timer treasureSpawnTimer;
 
 byte dragonFaceProgress[6] = {0, 0, 0, 0, 0, 0};
 byte dragonMessageFace = 0;
+byte nextAttack = FIRE;
 
 void setup() {
   randomize();
@@ -102,6 +103,19 @@ void loop() {
       isDragon = !isDragon;
       dragonWaitTimer.set(DRAGON_WAIT_TIME);
       gameTimer.set(MAX_GAME_TIME);
+
+      //determine next attack
+      switch (random(2)) {
+        case 0:
+          nextAttack = FIRE;
+          break;
+        case 1:
+          nextAttack = POISON;
+          break;
+        case 2:
+          nextAttack = VOID;
+          break;
+      }
     }
   }
 
@@ -142,18 +156,18 @@ void inertLoop() {
 
   if (isDragon) {
     if (dragonWaitTimer.isExpired()) {
+
       byte maybeAttack = random(100);
       if (maybeAttack > 40) {
         if (noNeighborsAttacking) {
-          byte whichAttack = random(99);
-          whichAttack = (whichAttack % 3) + 1;
-          if (whichAttack == 1) {
+          byte whichAttack = nextAttack;
+          if (whichAttack == POISON) {
             attackSignal = POISON;
             extraTime = POISON_EXTRA_TIME;
-          } else if (whichAttack == 2) {
+          } else if (whichAttack == FIRE) {
             attackSignal = FIRE;
             extraTime = FIRE_EXTRA_TIME;
-          } else if (whichAttack == 3) {
+          } else if (whichAttack == VOID) {
             attackSignal = VOID;
             extraTime = VOID_EXTRA_TIME;
           }
@@ -328,6 +342,19 @@ void resolveLoop() {
 
   if (isDragon) {
     dragonWaitTimer.set(map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
+
+    //determine next attack
+    switch (random(2)) {
+      case 0:
+        nextAttack = FIRE;
+        break;
+      case 1:
+        nextAttack = POISON;
+        break;
+      case 2:
+        nextAttack = VOID;
+        break;
+    }
   }
 
   FOREACH_FACE(f) {
@@ -441,6 +468,8 @@ void poisonDisplay() {
   }
 }
 
+#define PREVIEW_TIME 250
+
 void voidDisplay() {
   setColor(OFF);
   setColorOnFace(dim(BLUE, 55), random(5));
@@ -464,6 +493,24 @@ void dragonDisplay() {
 
     //now that we've done the math, set some color!
     setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+
+  }
+
+  if (dragonWaitTimer.getRemaining() < PREVIEW_TIME) {//we should be showing the next attack
+    switch (nextAttack) {
+      case FIRE:
+        setColorOnFace(ORANGE, random(5));
+        //setColorOnFace(ORANGE, random(5));
+        break;
+      case POISON:
+        setColorOnFace(POISON_COLOR, random(5));
+        //setColorOnFace(POISON_COLOR, random(5));
+        break;
+      case VOID:
+        setColorOnFace(OFF, random(5));
+        //setColorOnFace(OFF, random(5));
+        break;
+    }
   }
 
 }

@@ -4,12 +4,18 @@
 //
 
 #define FIELD_COLOR makeColorHSB(200,60,100)
+
+#define MAX_GAME_TIME 240000 //four Minutes
+#define MAX_TIME_BETWEEN_ATTACKS 10000
+#define MIN_TIME_BETWEEN_ATTACKS 5000
+Timer gameTimer;
+
 #define FIRE_DURATION 1300
 #define POISON_DURATION 3000
 #define VOID_DURATION 5000
-#define FIRE_DELAY_TIME 0
+#define FIRE_DELAY_TIME 100
 #define FIRE_EXTRA_TIME 1000
-#define VOID_DELAY_TIME 0
+#define VOID_DELAY_TIME 200
 #define VOID_EXTRA_TIME 3000
 #define POISON_DELAY_TIME 500
 #define POISON_EXTRA_TIME 4000
@@ -95,6 +101,7 @@ void loop() {
     if (clicks == 3) {
       isDragon = !isDragon;
       dragonWaitTimer.set(DRAGON_WAIT_TIME);
+      gameTimer.set(MAX_GAME_TIME);
     }
   }
 
@@ -316,8 +323,11 @@ void resolveLoop() {
 
   ignoreAttacksTimer.set(IGNORE_TIME);
 
+  //determine how long my next waiting period is
+  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+
   if (isDragon) {
-    dragonWaitTimer.set(DRAGON_WAIT_TIME + extraTime);
+    dragonWaitTimer.set(map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
   }
 
   FOREACH_FACE(f) {
@@ -374,13 +384,13 @@ void displayLoop() {
   } else if (blinkType == FIELD) {
     switch (attackSignal) {
       case FIRE:
-        setColor(ORANGE);
+        fireDisplay();
         break;
       case POISON:
-        setColor(GREEN);
+        poisonDisplay();
         break;
       case VOID:
-        setColor(OFF);
+        voidDisplay();
         break;
       case INERT:
         fieldDisplay();
@@ -391,6 +401,49 @@ void displayLoop() {
   }
 
 
+}
+
+#define FIRE_HUE_MIN 0
+#define FIRE_HUE_MAX 25
+
+void fireDisplay() {
+  //so there's a timer that governs some of the animation
+  //but also we want to be concious of which sides are touching other fire
+
+  FOREACH_FACE(f) {
+    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
+        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 150), f);
+      } else {
+        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+      }
+    } else {
+      setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+    }
+
+  }
+}
+
+#define POISON_COLOR makeColorRGB(0,255,30)
+
+void poisonDisplay() {
+  FOREACH_FACE(f) {
+    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
+        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
+      } else {//neighbor is not poison
+        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+      }
+    } else {//no neighbor
+      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+    }
+
+  }
+}
+
+void voidDisplay() {
+  setColor(OFF);
+  setColorOnFace(dim(BLUE, 55), random(5));
 }
 
 void dragonDisplay() {

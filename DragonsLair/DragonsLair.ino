@@ -48,7 +48,7 @@ Timer delayTimer;
 Timer attackDurationTimer;
 Timer dragonWaitTimer;
 Timer dragonAttackTimer;
-Timer ignoreAttacksTimer;
+//Timer ignoreAttacksTimer;
 Timer goldMineTimer;
 Timer treasureSpawnTimer;
 
@@ -189,29 +189,29 @@ void inertLoop() {
     }
 
     //recieves attacks and delays sending them until it's time
-    if (ignoreAttacksTimer.isExpired()) {
-      FOREACH_FACE(f) {
-        if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-          if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
-            if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
-              if (hiddenAttackSignal == INERT) {
-                hiddenAttackSignal = getAttackSignal(getLastValueReceivedOnFace(f));
-                if (hiddenAttackSignal == FIRE) {
-                  //set timer and display fire but don't BE fire until timer is up
-                  delayTimer.set(FIRE_DELAY_TIME);
-                } else if (hiddenAttackSignal == POISON) {
-                  //setTimer for poisionDisplay but don't BE poison until timer is out
-                  delayTimer.set(POISON_DELAY_TIME);
-                } else if (hiddenAttackSignal == VOID) {
-                  //set timer and display void, but don't BE void until timer is out
-                  delayTimer.set(VOID_DELAY_TIME);
-                }
+    //    if (ignoreAttacksTimer.isExpired()) {
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
+            if (hiddenAttackSignal == INERT) {
+              hiddenAttackSignal = getAttackSignal(getLastValueReceivedOnFace(f));
+              if (hiddenAttackSignal == FIRE) {
+                //set timer and display fire but don't BE fire until timer is up
+                delayTimer.set(FIRE_DELAY_TIME);
+              } else if (hiddenAttackSignal == POISON) {
+                //setTimer for poisionDisplay but don't BE poison until timer is out
+                delayTimer.set(POISON_DELAY_TIME);
+              } else if (hiddenAttackSignal == VOID) {
+                //set timer and display void, but don't BE void until timer is out
+                delayTimer.set(VOID_DELAY_TIME);
               }
             }
           }
         }
       }
     }
+    //    }
 
     //When the delay is over, it's time to send the signal and set the duration of the attack
     if (!isDragon) {
@@ -340,7 +340,7 @@ void voidLoop() {
 void resolveLoop() {
   attackSignal = INERT;
 
-  ignoreAttacksTimer.set(IGNORE_TIME);
+  //  ignoreAttacksTimer.set(IGNORE_TIME);
 
   //determine how long my next waiting period is
   byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
@@ -364,7 +364,7 @@ void resolveLoop() {
 
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+      if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) { //This neighbor isn't in RESOLVE. Stay in RESOLVE
           attackSignal = RESOLVE;
         }
@@ -426,9 +426,8 @@ void displayLoop() {
         voidDisplay();
         break;
       case INERT:
-        fieldDisplay();
-        break;
       case RESOLVE:
+        fieldDisplay();
         break;
     }
   }
@@ -447,10 +446,11 @@ void playerDisplay() {
   }
 
   if (!damageAnimTimer.isExpired()) {//we are currently taking damage
-    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
-    setColorOnFace(OFF, spinFace & 6);
-    setColorOnFace(OFF, (spinFace + 2) % 6);
-    setColorOnFace(OFF, (spinFace + 4) % 6);
+    setColor(dim(RED, 100));
+    //    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
+    //    setColorOnFace(OFF, spinFace & 6);
+    //    setColorOnFace(OFF, (spinFace + 2) % 6);
+    //    setColorOnFace(OFF, (spinFace + 4) % 6);
   }
 }
 

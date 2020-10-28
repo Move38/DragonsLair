@@ -49,6 +49,13 @@ Timer ignoreAttacksTimer;
 Timer goldMineTimer;
 Timer treasureSpawnTimer;
 
+#define DRAGON_SPIN_INTERVAL 600
+#define DRAGON_FADE_SPEED 4
+#define DRAGON_COLOR makeColorHSB( 10, 230, 255)
+
+byte dragonFaceProgress[6] = {0, 0, 0, 0, 0, 0};
+byte dragonMessageFace = 0;
+
 void setup() {
   randomize();
   byte randomTreasure = random(99);
@@ -110,6 +117,9 @@ void loop() {
   if (blinkType == FIELD) {
     sendData = (blinkType << 5) + (attackSignal << 2);
     setValueSentOnAllFaces(sendData);
+    if (isDragon) {//slightly different message if you are a dragon for animation reasons
+      setValueSentOnFace((sendData) | (1 << 1), dragonMessageFace);
+    }
   } else if (blinkType == PLAYER) {
     FOREACH_FACE(f) {
       sendData = (blinkType << 5) + (playerFaceSignal[f] << 2);
@@ -258,46 +268,46 @@ void fireLoop() {
     attackSignal = RESOLVE;
   }
 
-//  FOREACH_FACE(f) {
-//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-//          attackSignal = FIRE;
-//        }
-//      }
-//    }
-//  }
+  //  FOREACH_FACE(f) {
+  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+  //          attackSignal = FIRE;
+  //        }
+  //      }
+  //    }
+  //  }
 }
 
 void poisonLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-  
-//  FOREACH_FACE(f) {
-//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-//          attackSignal = POISON;
-//        }
-//      }
-//    }
-//  }
+
+  //  FOREACH_FACE(f) {
+  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+  //          attackSignal = POISON;
+  //        }
+  //      }
+  //    }
+  //  }
 }
 
 void voidLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-//  FOREACH_FACE(f) {
-//    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-//      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-//        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-//          attackSignal = VOID;
-//        }
-//      }
-//    }
-//  }
+  //  FOREACH_FACE(f) {
+  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
+  //          attackSignal = VOID;
+  //        }
+  //      }
+  //    }
+  //  }
 
 }
 
@@ -350,7 +360,8 @@ void incorrectLoop() {
 
 void displayLoop() {
   if (isDragon) {
-    setColor(MAGENTA);
+    //setColor(MAGENTA);
+    dragonDisplay();
   } else if (blinkType == PLAYER) {
     if (isDead) {
       setColor(WHITE);
@@ -382,7 +393,30 @@ void displayLoop() {
 
 }
 
+void dragonDisplay() {
+  //so we want to do a little animation about spinning
+  dragonMessageFace = ((millis() % DRAGON_SPIN_INTERVAL) / (DRAGON_SPIN_INTERVAL / 6)) % 6;
+
+  FOREACH_FACE(f) {
+    if (f != dragonMessageFace) {
+      //decrement face
+      if (dragonFaceProgress[f] > DRAGON_FADE_SPEED) {//if it's got some value, lower it by 10
+        dragonFaceProgress[f] -= DRAGON_FADE_SPEED;
+      } else {//if it's already done or nearly done, set it to 0
+        dragonFaceProgress[f] = 0;
+      }
+    } else {
+      dragonFaceProgress[f] = 255;
+    }
+
+    //now that we've done the math, set some color!
+    setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+  }
+
+}
+
 void fieldDisplay() {
+
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
@@ -394,6 +428,14 @@ void fieldDisplay() {
           setColorOnFace(treasureColor[treasureType - 1], f);
         }
       }
+
+      //here's where we need to light up the special dragon neighbors
+      if (getDragonMessage(getLastValueReceivedOnFace(f)) == true) {
+        dragonFaceProgress[f] = 255;
+        dragonFaceProgress[(f + 1) % 6] = 255;
+        dragonFaceProgress[(f + 5) % 6] = 255;
+      }
+
     } else {
       if (!treasureSpawnTimer.isExpired()) {
         setColorOnFace(FIELD_COLOR, f);
@@ -401,6 +443,19 @@ void fieldDisplay() {
         setColorOnFace(treasureColor[treasureType - 1], f);
       }
     }
+
+    //now actually do the dragon display
+    //decrement face first
+    if (dragonFaceProgress[f] > DRAGON_FADE_SPEED) {//if it's got some value, lower it by 10
+      dragonFaceProgress[f] -= DRAGON_FADE_SPEED;
+    } else {//if it's already done or nearly done, set it to 0
+      dragonFaceProgress[f] = 0;
+    }
+    //then display dragon sturf
+    if (dragonFaceProgress[f] > 0) {
+      setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+    }
+
   }
 }
 
@@ -463,4 +518,8 @@ byte getBlinkType(byte data) {
 
 byte getAttackSignal(byte data) {
   return (data >> 2 & 7);
+}
+
+bool getDragonMessage(byte data) {
+  return ((data >> 1) & 1);
 }

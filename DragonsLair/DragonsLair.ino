@@ -1,8 +1,3 @@
-//Notes as of 10/20/2020
-// Mining isn't quite there. the handoff isn't up and running
-// correct connections get stuck in the correct connection loop (WHITE) and incorrect gets stuck in incorrect loop (BLUE)
-//
-
 #define FIELD_COLOR makeColorHSB(200,60,100)
 
 #define MAX_GAME_TIME 240000 //four Minutes
@@ -37,7 +32,7 @@ byte playerFaceSignal[6] = {FIRE, INERT, POISON, INERT, VOID, INERT}; //attacks 
 byte permanentPlayerFaceType[6] = {FIRE, INERT, POISON, INERT, VOID, INERT};
 bool isDragon = false;
 
-int playerScore = 0;
+byte playerScore = 0;
 byte ignoredFaces[6] = {0, 0, 0, 0, 0, 0};
 byte luck = 3;
 bool isDead = false;
@@ -166,19 +161,19 @@ void inertLoop() {
     if (dragonWaitTimer.isExpired()) {
 
       if (random(100) > 40) {
-        if (noNeighborsAttacking()) {
-          if (nextAttack == POISON) {
-            attackSignal = POISON;
-            extraTime = POISON_EXTRA_TIME;
-          } else if (nextAttack == FIRE) {
-            attackSignal = FIRE;
-            extraTime = FIRE_EXTRA_TIME;
-          } else if (nextAttack == VOID) {
-            attackSignal = VOID;
-            extraTime = VOID_EXTRA_TIME;
-          }
-          attackDurationTimer.set(FIRE_DURATION);
+
+        if (nextAttack == POISON) {
+          attackSignal = POISON;
+          extraTime = POISON_EXTRA_TIME;
+        } else if (nextAttack == FIRE) {
+          attackSignal = FIRE;
+          extraTime = FIRE_EXTRA_TIME;
+        } else if (nextAttack == VOID) {
+          attackSignal = VOID;
+          extraTime = VOID_EXTRA_TIME;
         }
+        attackDurationTimer.set(FIRE_DURATION);
+
       }
     }
   }
@@ -593,22 +588,6 @@ void fieldDisplay() {
       setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
     }
 
-  }
-}
-
-bool noNeighborsAttacking() {
-  byte neighborsAttacking = 0;
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
-        neighborsAttacking++;
-      }
-    }
-  }
-  if (neighborsAttacking == 0) {
-    return true;
-  } else {
-    return false;
   }
 }
 

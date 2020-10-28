@@ -298,7 +298,7 @@ void fireLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
     treasureType = 0;
-    treasureSpawnTimer.set(TREASURE_SPAWN_TIME);
+    treasureSpawnTimer.set(TREASURE_SPAWN_TIME / 2);
   }
 
   //  FOREACH_FACE(f) {
@@ -549,6 +549,8 @@ void dragonDisplay() {
 
 void fieldDisplay() {
 
+  byte randomSparkle = random(100);
+
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
@@ -570,7 +572,11 @@ void fieldDisplay() {
       if (!treasureSpawnTimer.isExpired()) {
         setColorOnFace(FIELD_COLOR, f);
       } else {
-        setColorOnFace(treasureColor[treasureType - 1], f);
+        if (f == randomSparkle) {
+          setColorOnFace(WHITE, f);
+        } else {
+          setColorOnFace(treasureColor[treasureType - 1], f);
+        }
       }
     }
 

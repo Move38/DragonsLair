@@ -32,7 +32,7 @@ byte playerFaceSignal[6] = {FIRE, INERT, POISON, INERT, VOID, INERT}; //attacks 
 byte permanentPlayerFaceType[6] = {FIRE, INERT, POISON, INERT, VOID, INERT};
 bool isDragon = false;
 
-byte playerScore = 0;
+int playerScore = 0;
 byte ignoredFaces[6] = {0, 0, 0, 0, 0, 0};
 byte luck = 3;
 bool isDead = false;
@@ -74,13 +74,16 @@ void loop() {
       inertLoop();
       break;
     case FIRE:
-      fireLoop();
+      attackLoop();
+      treasureType = 0;
+      treasureSpawnTimer.set(TREASURE_SPAWN_TIME / 2);
       break;
     case POISON:
-      poisonLoop();
+      attackLoop();
       break;
     case VOID:
-      voidLoop();
+      attackLoop();
+      miningLoop();
       break;
     case RESOLVE:
       resolveLoop();
@@ -287,55 +290,10 @@ void inertLoop() {
   }
 }
 
-void fireLoop() {
-  if (attackDurationTimer.isExpired()) {
-    attackSignal = RESOLVE;
-    treasureType = 0;
-    treasureSpawnTimer.set(TREASURE_SPAWN_TIME / 2);
-  }
-
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = FIRE;
-  //        }
-  //      }
-  //    }
-  //  }
-}
-
-void poisonLoop() {
+void attackLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = POISON;
-  //        }
-  //      }
-  //    }
-  //  }
-}
-
-void voidLoop() {
-  if (attackDurationTimer.isExpired()) {
-    attackSignal = RESOLVE;
-  }
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = VOID;
-  //        }
-  //      }
-  //    }
-  //  }
-
-  miningLoop();
 }
 
 void resolveLoop() {
@@ -344,10 +302,12 @@ void resolveLoop() {
   //  ignoreAttacksTimer.set(IGNORE_TIME);
 
   //determine how long my next waiting period is
-  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+
+  //byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
 
   if (isDragon) {
-    dragonWaitTimer.set(map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
+    dragonWaitTimer.set(map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
+    //dragonWaitTimer.set(MAX_TIME_BETWEEN_ATTACKS);
 
     //determine next attack
     switch (random(2)) {
@@ -417,14 +377,6 @@ void displayLoop() {
     dragonDisplay();
   } else if (blinkType == PLAYER) {
     playerDisplay();
-    //    if (isDead) {
-    //      setColor(WHITE);
-    //    } else {
-    //      setColor(FIELD_COLOR);
-    //      setColorOnFace(RED, 0);
-    //      setColorOnFace(GREEN, 2);
-    //      setColorOnFace(YELLOW, 4);
-    //    }
   } else if (blinkType == FIELD) {
     switch (attackSignal) {
       case FIRE:
@@ -443,7 +395,6 @@ void displayLoop() {
     }
   }
 
-
 }
 
 void playerDisplay() {
@@ -457,16 +408,47 @@ void playerDisplay() {
   }
 
   if (!damageAnimTimer.isExpired()) {//we are currently taking damage
-    setColor(dim(RED, 100));
-    //    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
-    //    setColorOnFace(OFF, spinFace & 6);
-    //    setColorOnFace(OFF, (spinFace + 2) % 6);
-    //    setColorOnFace(OFF, (spinFace + 4) % 6);
+    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
+    setColorOnFace(OFF, spinFace & 6);
+    setColorOnFace(OFF, (spinFace + 2) % 6);
+    setColorOnFace(OFF, (spinFace + 4) % 6);
   }
 }
 
+#define SCORE_FRAME_TIME 100
+
 void scoreDisplay() {
-  setColor(WHITE);
+  //setColor(WHITE);
+  //first, determine amount of frames in this animation
+  byte hundreds = (playerScore - (playerScore % 100)) / 100;
+  byte tens = ((playerScore % 100) - (playerScore % 10)) / 10;
+  byte ones = (playerScore % 10);
+  byte animFrames = (hundreds * 2) + (tens * 2) + (ones * 2) + 8;
+
+  //now, determine current frame within animframes
+  byte currentFrame = (millis() / SCORE_FRAME_TIME) % animFrames;
+
+  //light the background
+  setColorOnFace(dim(YELLOW, 120), 0);
+  setColorOnFace(dim(YELLOW, 120), 1);
+  setColorOnFace(dim(GREEN, 120), 2);
+  setColorOnFace(dim(GREEN, 120), 3);
+  setColorOnFace(dim(RED, 120), 4);
+  setColorOnFace(dim(RED, 120), 5);
+
+  //determine if it's time to do a flash
+  if ((currentFrame % 1) == 0) {//an even number
+    if (currentFrame <= hundreds * 2) {
+      setColorOnFace(YELLOW, 0);
+      setColorOnFace(YELLOW, 1);
+    } else if (currentFrame <= (hundreds * 2) + (tens * 2) + 2) {
+      setColorOnFace(GREEN, 2);
+      setColorOnFace(GREEN, 3);
+    } else if (currentFrame <= (hundreds * 2) + (tens * 2) + (ones * 2) + 4) {
+      setColorOnFace(RED, 4);
+      setColorOnFace(RED, 5);
+    }
+  }
 }
 
 #define FIRE_HUE_MIN 0
@@ -476,19 +458,20 @@ void fireDisplay() {
   //so there's a timer that governs some of the animation
   //but also we want to be concious of which sides are touching other fire
 
-  byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
+  //byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
 
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
-        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
-      } else {
-        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-      }
-    } else {
-      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-    }
+    setColorOnFace(makeColorHSB(random(25), 255, 255), f); //setColorOnFace(makeColorHSB(random(25), progress, 255), f);
 
+    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
+    //        setColorOnFace(makeColorHSB(random(25), 255, 150), f);
+    //      } else {
+    //        setColorOnFace(makeColorHSB(random(25), 255, 255), f);
+    //      }
+    //    } else {
+    //      setColorOnFace(makeColorHSB(random(25), 255, 255), f);
+    //    }
   }
 }
 
@@ -496,15 +479,17 @@ void fireDisplay() {
 
 void poisonDisplay() {
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
-        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
-      } else {//neighbor is not poison
-        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-      }
-    } else {//no neighbor
-      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-    }
+    setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
+
+    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
+    //        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
+    //      } else {//neighbor is not poison
+    //        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+    //      }
+    //    } else {//no neighbor
+    //      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+    //    }
 
   }
 }
@@ -574,39 +559,40 @@ void fieldDisplay() {
 
       //here's where we need to light up the special dragon neighbors
       if (getDragonMessage(getLastValueReceivedOnFace(f)) == true) {
-        dragonFaceProgress[f] = 255;
+        //dragonFaceProgress[f] = 255;
+        setColorOnFace(DRAGON_COLOR, f);
       }
 
     } else {
       if (!treasureSpawnTimer.isExpired()) {
         setColorOnFace(FIELD_COLOR, f);
       } else {
-        if (f == randomSparkle) {
-          setColorOnFace(WHITE, f);
-        } else {
-          setColorOnFace(treasureColor[treasureType - 1], f);
-        }
+        setColorOnFace(treasureColor[treasureType - 1], f);
+
+        //        if (f == randomSparkle) {
+        //          setColorOnFace(WHITE, f);
+        //        } else {
+        //          setColorOnFace(treasureColor[treasureType - 1], f);
+        //        }
       }
     }
 
     //now actually do the dragon display
     //decrement face first
-    if (dragonFaceProgress[f] > DRAGON_FADE_SPEED) {//if it's got some value, lower it by 10
-      dragonFaceProgress[f] -= DRAGON_FADE_SPEED;
-    } else {//if it's already done or nearly done, set it to 0
-      dragonFaceProgress[f] = 0;
-    }
-    //then display dragon sturf
-    if (dragonFaceProgress[f] > 0) {
-      setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
-    }
+    //    if (dragonFaceProgress[f] > DRAGON_FADE_SPEED) {//if it's got some value, lower it by 10
+    //      dragonFaceProgress[f] -= DRAGON_FADE_SPEED;
+    //    } else {//if it's already done or nearly done, set it to 0
+    //      dragonFaceProgress[f] = 0;
+    //    }
+    //    //then display dragon sturf
+    //    if (dragonFaceProgress[f] > 0) {
+    //      setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+    //    }
 
   }
 }
 
 void miningLoop() {
-
-
   // In this case I've used the attacks as treasure types, but only when
   // coupled with the PLAYER blinktype.
   // FIRE is ruby, POISON is emerald, and VOID is gold

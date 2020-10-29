@@ -479,15 +479,18 @@ void fireDisplay() {
   byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
 
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
-        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
-      } else {
-        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-      }
-    } else {
-      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-    }
+
+    setColorOnFace(makeColorHSB(random(25), progress, 255), f);
+
+    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
+    //        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
+    //      } else {
+    //        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
+    //      }
+    //    } else {
+    //      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
+    //    }
 
   }
 }
@@ -496,15 +499,18 @@ void fireDisplay() {
 
 void poisonDisplay() {
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
-        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
-      } else {//neighbor is not poison
-        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-      }
-    } else {//no neighbor
-      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-    }
+
+    setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
+
+    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
+    //        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
+    //      } else {//neighbor is not poison
+    //        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+    //      }
+    //    } else {//no neighbor
+    //      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
+    //    }
 
   }
 }
@@ -558,7 +564,7 @@ void dragonDisplay() {
 
 void fieldDisplay() {
 
-  byte randomSparkle = random(100);
+  //byte randomSparkle = random(100);
 
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
@@ -581,11 +587,14 @@ void fieldDisplay() {
       if (!treasureSpawnTimer.isExpired()) {
         setColorOnFace(FIELD_COLOR, f);
       } else {
-        if (f == randomSparkle) {
-          setColorOnFace(WHITE, f);
-        } else {
-          setColorOnFace(treasureColor[treasureType - 1], f);
-        }
+
+        setColorOnFace(treasureColor[treasureType - 1], f);
+
+        //        if (f == randomSparkle) {
+        //          setColorOnFace(WHITE, f);
+        //        } else {
+        //          setColorOnFace(treasureColor[treasureType - 1], f);
+        //        }
       }
     }
 

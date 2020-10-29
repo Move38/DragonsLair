@@ -38,6 +38,7 @@ byte luck = 3;
 bool isDead = false;
 Timer damageAnimTimer;
 #define DAMAGE_ANIM_TIME 700
+bool takingDamage = false;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 Color treasureColor[3] = {RED, GREEN, YELLOW};
@@ -248,6 +249,7 @@ void inertLoop() {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
+              takingDamage = true;
               ignoredFaces[f] = 1;
             }
           }
@@ -270,10 +272,14 @@ void inertLoop() {
               ignoredFaces[f] = 1;
             }
             playerFaceSignal[f] = CORRECT;
+            //also set the damage timer
+            damageAnimTimer.set(DAMAGE_ANIM_TIME);
+            takingDamage = false;
           } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
+              takingDamage = true;
               ignoredFaces[f] = 1;
             }
             playerFaceSignal[f] = INCORRECT;
@@ -456,8 +462,15 @@ void playerDisplay() {
     setColorOnFace(YELLOW, 4);
   }
 
-  if (!damageAnimTimer.isExpired()) {//we are currently taking damage
-    setColor(dim(RED, 100));
+  if (!damageAnimTimer.isExpired()) {//we are currently taking damage OR getting points
+
+    if (takingDamage) {
+      setColor(ORANGE);
+    } else {
+      setColor(WHITE);
+    }
+
+
     //    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
     //    setColorOnFace(OFF, spinFace & 6);
     //    setColorOnFace(OFF, (spinFace + 2) % 6);

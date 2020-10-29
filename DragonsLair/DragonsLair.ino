@@ -584,11 +584,22 @@ void fieldDisplay() {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
         setColorOnFace(FIELD_COLOR, f);
       } else {
-        if (!treasureSpawnTimer.isExpired()) {
-          setColorOnFace(FIELD_COLOR, f);
+        //this is where we do the mining reward animation
+        if (!damageAnimTimer.isExpired()) {
+          setColorOnFace(dim(WHITE, random(255)), f);
         } else {
-          setColorOnFace(treasureColor[treasureType - 1], f);
+          if (!treasureSpawnTimer.isExpired()) {
+            setColorOnFace(FIELD_COLOR, f);
+          } else {
+            if (!goldMineTimer.isExpired()) {
+              setColorOnFace(dim(treasureColor[treasureType - 1], random(255)), f);
+            } else {
+              setColorOnFace(treasureColor[treasureType - 1], f);
+            }
+          }
         }
+
+
       }
 
       //here's where we need to light up the special dragon neighbors
@@ -638,12 +649,16 @@ void miningLoop() {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
           if (treasureType == 1) {
             attackSignal = CORRECT;
+            //do an animation?
+            damageAnimTimer.set(DAMAGE_ANIM_TIME);
           } else {
             attackSignal = INCORRECT;
           }
         } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
           if (treasureType == 2) {
             attackSignal = CORRECT;
+            //do an animation?
+            damageAnimTimer.set(DAMAGE_ANIM_TIME);
           } else {
             attackSignal = INCORRECT;
           }
@@ -653,6 +668,8 @@ void miningLoop() {
               goldMineTimer.set(GOLD_MINE_TIME);
             } else if (goldMineTimer.getRemaining() < GOLD_MINE_TIME / 2) {
               attackSignal = CORRECT;
+              //do an animation?
+              damageAnimTimer.set(DAMAGE_ANIM_TIME);
             }
           } else {
             attackSignal = INCORRECT;

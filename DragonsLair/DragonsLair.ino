@@ -244,7 +244,7 @@ void inertLoop() {
     FOREACH_FACE(f) {
       if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
         if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
-          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
@@ -335,6 +335,7 @@ void voidLoop() {
   //    }
   //  }
 
+  miningLoop();
 }
 
 void resolveLoop() {
@@ -381,7 +382,13 @@ void correctLoop() {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
           treasureType = 0;
           treasureSpawnTimer.set(TREASURE_SPAWN_TIME);
-          attackSignal = INERT;
+
+          if (!attackDurationTimer.isExpired()) {
+            attackSignal = VOID;
+          } else {
+            attackSignal = INERT;
+          }
+
         }
       }
     }
@@ -393,7 +400,11 @@ void incorrectLoop() {
     if (!isValueReceivedOnFaceExpired(f)) {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == PLAYER) {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
-          attackSignal = INERT;
+          if (!attackDurationTimer.isExpired()) {
+            attackSignal = VOID;
+          } else {
+            attackSignal = INERT;
+          }
         }
       }
     }
@@ -465,15 +476,17 @@ void fireDisplay() {
   //so there's a timer that governs some of the animation
   //but also we want to be concious of which sides are touching other fire
 
+  byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
+
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
       if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
-        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 150), f);
+        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
       } else {
-        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
       }
     } else {
-      setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
     }
 
   }

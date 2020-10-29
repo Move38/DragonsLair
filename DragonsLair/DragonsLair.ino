@@ -1,8 +1,3 @@
-//Notes as of 10/20/2020
-// Mining isn't quite there. the handoff isn't up and running
-// correct connections get stuck in the correct connection loop (WHITE) and incorrect gets stuck in incorrect loop (BLUE)
-//
-
 #define FIELD_COLOR makeColorHSB(200,60,100)
 
 #define MAX_GAME_TIME 240000 //four Minutes
@@ -37,7 +32,7 @@ byte playerFaceSignal[6] = {FIRE, INERT, POISON, INERT, VOID, INERT}; //attacks 
 byte permanentPlayerFaceType[6] = {FIRE, INERT, POISON, INERT, VOID, INERT};
 bool isDragon = false;
 
-int playerScore = 0;
+byte playerScore = 0;
 byte ignoredFaces[6] = {0, 0, 0, 0, 0, 0};
 byte luck = 3;
 bool isDead = false;
@@ -53,7 +48,7 @@ Timer delayTimer;
 Timer attackDurationTimer;
 Timer dragonWaitTimer;
 Timer dragonAttackTimer;
-Timer ignoreAttacksTimer;
+//Timer ignoreAttacksTimer;
 Timer goldMineTimer;
 Timer treasureSpawnTimer;
 
@@ -166,19 +161,19 @@ void inertLoop() {
     if (dragonWaitTimer.isExpired()) {
 
       if (random(100) > 40) {
-        if (noNeighborsAttacking()) {
-          if (nextAttack == POISON) {
-            attackSignal = POISON;
-            extraTime = POISON_EXTRA_TIME;
-          } else if (nextAttack == FIRE) {
-            attackSignal = FIRE;
-            extraTime = FIRE_EXTRA_TIME;
-          } else if (nextAttack == VOID) {
-            attackSignal = VOID;
-            extraTime = VOID_EXTRA_TIME;
-          }
-          attackDurationTimer.set(FIRE_DURATION);
+
+        if (nextAttack == POISON) {
+          attackSignal = POISON;
+          extraTime = POISON_EXTRA_TIME;
+        } else if (nextAttack == FIRE) {
+          attackSignal = FIRE;
+          extraTime = FIRE_EXTRA_TIME;
+        } else if (nextAttack == VOID) {
+          attackSignal = VOID;
+          extraTime = VOID_EXTRA_TIME;
         }
+        attackDurationTimer.set(FIRE_DURATION);
+
       }
     }
   }
@@ -194,29 +189,29 @@ void inertLoop() {
     }
 
     //recieves attacks and delays sending them until it's time
-    if (ignoreAttacksTimer.isExpired()) {
-      FOREACH_FACE(f) {
-        if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-          if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
-            if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
-              if (hiddenAttackSignal == INERT) {
-                hiddenAttackSignal = getAttackSignal(getLastValueReceivedOnFace(f));
-                if (hiddenAttackSignal == FIRE) {
-                  //set timer and display fire but don't BE fire until timer is up
-                  delayTimer.set(FIRE_DELAY_TIME);
-                } else if (hiddenAttackSignal == POISON) {
-                  //setTimer for poisionDisplay but don't BE poison until timer is out
-                  delayTimer.set(POISON_DELAY_TIME);
-                } else if (hiddenAttackSignal == VOID) {
-                  //set timer and display void, but don't BE void until timer is out
-                  delayTimer.set(VOID_DELAY_TIME);
-                }
+    //    if (ignoreAttacksTimer.isExpired()) {
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
+            if (hiddenAttackSignal == INERT) {
+              hiddenAttackSignal = getAttackSignal(getLastValueReceivedOnFace(f));
+              if (hiddenAttackSignal == FIRE) {
+                //set timer and display fire but don't BE fire until timer is up
+                delayTimer.set(FIRE_DELAY_TIME);
+              } else if (hiddenAttackSignal == POISON) {
+                //setTimer for poisionDisplay but don't BE poison until timer is out
+                delayTimer.set(POISON_DELAY_TIME);
+              } else if (hiddenAttackSignal == VOID) {
+                //set timer and display void, but don't BE void until timer is out
+                delayTimer.set(VOID_DELAY_TIME);
               }
             }
           }
         }
       }
     }
+    //    }
 
     //When the delay is over, it's time to send the signal and set the duration of the attack
     if (!isDragon) {
@@ -249,7 +244,7 @@ void inertLoop() {
     FOREACH_FACE(f) {
       if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
         if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
-          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
@@ -340,12 +335,13 @@ void voidLoop() {
   //    }
   //  }
 
+  miningLoop();
 }
 
 void resolveLoop() {
   attackSignal = INERT;
 
-  ignoreAttacksTimer.set(IGNORE_TIME);
+  //  ignoreAttacksTimer.set(IGNORE_TIME);
 
   //determine how long my next waiting period is
   byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
@@ -369,7 +365,7 @@ void resolveLoop() {
 
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
+      if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) { //This neighbor isn't in RESOLVE. Stay in RESOLVE
           attackSignal = RESOLVE;
         }
@@ -386,7 +382,13 @@ void correctLoop() {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
           treasureType = 0;
           treasureSpawnTimer.set(TREASURE_SPAWN_TIME);
-          attackSignal = INERT;
+
+          if (!attackDurationTimer.isExpired()) {
+            attackSignal = VOID;
+          } else {
+            attackSignal = INERT;
+          }
+
         }
       }
     }
@@ -398,7 +400,11 @@ void incorrectLoop() {
     if (!isValueReceivedOnFaceExpired(f)) {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == PLAYER) {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
-          attackSignal = INERT;
+          if (!attackDurationTimer.isExpired()) {
+            attackSignal = VOID;
+          } else {
+            attackSignal = INERT;
+          }
         }
       }
     }
@@ -431,9 +437,8 @@ void displayLoop() {
         voidDisplay();
         break;
       case INERT:
-        fieldDisplay();
-        break;
       case RESOLVE:
+        fieldDisplay();
         break;
     }
   }
@@ -452,10 +457,11 @@ void playerDisplay() {
   }
 
   if (!damageAnimTimer.isExpired()) {//we are currently taking damage
-    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
-    setColorOnFace(OFF, spinFace & 6);
-    setColorOnFace(OFF, (spinFace + 2) % 6);
-    setColorOnFace(OFF, (spinFace + 4) % 6);
+    setColor(dim(RED, 100));
+    //    byte spinFace = damageAnimTimer.getRemaining() / (DAMAGE_ANIM_TIME / 10);
+    //    setColorOnFace(OFF, spinFace & 6);
+    //    setColorOnFace(OFF, (spinFace + 2) % 6);
+    //    setColorOnFace(OFF, (spinFace + 4) % 6);
   }
 }
 
@@ -470,15 +476,17 @@ void fireDisplay() {
   //so there's a timer that governs some of the animation
   //but also we want to be concious of which sides are touching other fire
 
+  byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
+
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
       if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
-        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 150), f);
+        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
       } else {
-        setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
       }
     } else {
-      setColorOnFace(makeColorHSB(random(25), 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150), 255), f);
+      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
     }
 
   }
@@ -593,22 +601,6 @@ void fieldDisplay() {
       setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
     }
 
-  }
-}
-
-bool noNeighborsAttacking() {
-  byte neighborsAttacking = 0;
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) {
-        neighborsAttacking++;
-      }
-    }
-  }
-  if (neighborsAttacking == 0) {
-    return true;
-  } else {
-    return false;
   }
 }
 

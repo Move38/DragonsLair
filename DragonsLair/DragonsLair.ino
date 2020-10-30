@@ -253,8 +253,16 @@ void inertLoop() {
               ignoredFaces[f] = 1;
             }
           }
-        } else if (getBlinkType(lastValueReceived) == FIELD) {
-          if (getAttackSignal(lastValueReceived) == CORRECT) {
+        }
+      } else {
+        ignoredFaces[f] = 0;
+      }
+    }
+    // Player mining
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {
+        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
             if (ignoredFaces[f] == 0) {
               if (permanentPlayerFaceType[f] == 4) {
                 playerScore += 3;
@@ -267,7 +275,7 @@ void inertLoop() {
             //also set the damage timer
             damageAnimTimer.set(DAMAGE_ANIM_TIME);
             takingDamage = false;
-          } else if (getAttackSignal(lastValueReceived) == INCORRECT) {
+          } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);

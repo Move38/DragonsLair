@@ -46,9 +46,10 @@ bool takingDamage = false;
 byte typeGained = FIRE;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
-#define RUBY makeColorHSB( 10, 230, 255)
-#define POISON_COLOR makeColorRGB(0,255,30)
-Color treasureColor[3] = {RUBY, GREEN, YELLOW};
+#define RUBY makeColorHSB( 10, 210, 255)
+#define POISON_COLOR makeColorRGB(0,255,100)
+#define EMERALD GREEN//this is redundant, but if I can make space I'll make a new emerald
+Color treasureColor[3] = {RUBY, EMERALD, YELLOW};
 
 byte extraTime = 0; //for setting the delay longer based on attack type
 
@@ -405,7 +406,7 @@ void displayLoop() {
     //    } else {
     //      setColor(FIELD_COLOR);
     //      setColorOnFace(RED, 0);
-    //      setColorOnFace(GREEN, 2);
+    //      setColorOnFace(EMERALD, 2);
     //      setColorOnFace(YELLOW, 4);
     //    }
   } else if (blinkType == FIELD) {
@@ -434,8 +435,8 @@ void playerDisplay() {
     scoreDisplay();
   } else {
     setColor(FIELD_COLOR);
-    setColorOnFace(RED, 0);
-    setColorOnFace(GREEN, 2);
+    setColorOnFace(RUBY, 0);
+    setColorOnFace(EMERALD, 2);
     setColorOnFace(YELLOW, 4);
   }
 
@@ -450,7 +451,7 @@ void playerDisplay() {
           attackDisplay(RUBY);
           break;
         case POISON:
-          attackDisplay(GREEN);
+          attackDisplay(EMERALD);
           break;
         case VOID:
           attackDisplay(YELLOW);
@@ -471,8 +472,8 @@ void scoreDisplay() {
 
   setColorOnFace(dim(YELLOW, 100), 0);
   setColorOnFace(dim(YELLOW, 100), 1);
-  setColorOnFace(dim(GREEN, 100), 2);
-  setColorOnFace(dim(GREEN, 100), 3);
+  setColorOnFace(dim(EMERALD, 100), 2);
+  setColorOnFace(dim(EMERALD, 100), 3);
   setColorOnFace(dim(RUBY, 100), 4);
   setColorOnFace(dim(RUBY, 100), 5);
 
@@ -497,8 +498,8 @@ void scoreDisplay() {
       setColorOnFace(YELLOW, 0);
       setColorOnFace(YELLOW, 1);
     } else if (scoreCountdown > 10) {
-      setColorOnFace(GREEN, 2);
-      setColorOnFace(GREEN, 3);
+      setColorOnFace(EMERALD, 2);
+      setColorOnFace(EMERALD, 3);
     } else if (scoreCountdown > 1) {
       setColorOnFace(RUBY, 4);
       setColorOnFace(RUBY, 5);

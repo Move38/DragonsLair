@@ -24,7 +24,7 @@ Timer gameTimer;
 //[A][B][C][D][E][F]
 
 enum blinkType {FIELD, PLAYER}; //[A]
-byte blinkType;
+byte blinkType = FIELD;
 enum attackSignal {INERT, FIRE, POISON, VOID, RESOLVE, CORRECT, INCORRECT}; //[B][C][D]
 byte attackSignal = INERT;
 byte hiddenAttackSignal;
@@ -66,7 +66,6 @@ byte nextAttack = FIRE;
 void setup() {
   randomize();
   treasureType = random(2) + 1;
-  blinkType = FIELD;
 }
 
 void loop() {

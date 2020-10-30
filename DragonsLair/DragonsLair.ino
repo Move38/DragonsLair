@@ -43,6 +43,7 @@ bool isDead = false;
 Timer damageAnimTimer;
 #define DAMAGE_ANIM_TIME 700
 bool takingDamage = false;
+byte typeGained = FIRE;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 #define RUBY makeColorHSB( 10, 230, 255)
@@ -273,8 +274,13 @@ void inertLoop() {
               if (ignoredFaces[f] == 0) {
                 if (f == 4) {
                   playerScore += 3;
+                  typeGained = VOID;//void means gold in other places
+                } else if (f == 0) {
+                  playerScore++;
+                  typeGained = FIRE;//fire means ruby in other places
                 } else {
                   playerScore++;
+                  typeGained = POISON;//poison means emerald in other places
                 }
                 ignoredFaces[f] = 1;
               }
@@ -436,9 +442,21 @@ void playerDisplay() {
   if (!damageAnimTimer.isExpired()) {//we are currently taking damage OR getting points
 
     if (takingDamage) {
-      setColor(ORANGE);
+      attackDisplay(RED);
     } else {
-      setColor(WHITE);
+
+      switch (typeGained) {
+        case FIRE:
+          attackDisplay(RUBY);
+          break;
+        case POISON:
+          attackDisplay(GREEN);
+          break;
+        case VOID:
+          attackDisplay(YELLOW);
+          break;
+      }
+
     }
 
 
@@ -538,27 +556,27 @@ void dragonDisplay() {
 
 void fieldDisplay() {
 
-  //byte randomSparkle = random(100);
+
+  if (!goldMineTimer.isExpired()) {
+    treasureColor[2] = dim(YELLOW, random(155) + 100);
+  } else {
+    treasureColor[2] = YELLOW;
+  }
 
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
       if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
         setColorOnFace(FIELD_COLOR, f);
       } else {
-        //this is where we do the mining reward animation
-        if (!damageAnimTimer.isExpired()) {
-          setColorOnFace(dim(WHITE, random(255)), f);
+
+        if (!treasureSpawnTimer.isExpired()) {
+          setColorOnFace(FIELD_COLOR, f);
         } else {
-          if (!treasureSpawnTimer.isExpired()) {
-            setColorOnFace(FIELD_COLOR, f);
-          } else {
-            if (!goldMineTimer.isExpired()) {
-              setColorOnFace(dim(treasureColor[treasureType - 1], random(255)), f);
-            } else {
-              setColorOnFace(treasureColor[treasureType - 1], f);
-            }
-          }
+
+          setColorOnFace(treasureColor[treasureType - 1], f);
+
         }
+
 
 
       }
@@ -595,6 +613,11 @@ void fieldDisplay() {
       setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
     }
 
+    if (!damageAnimTimer.isExpired()) {
+      attackDisplay(WHITE);
+      //setColorOnFace(dim(WHITE, random(255)), f);
+    }
+
   }
 }
 
@@ -612,14 +635,17 @@ void miningLoop() {
             attackSignal = CORRECT;
             //do an animation?
             damageAnimTimer.set(DAMAGE_ANIM_TIME);
+
           } else {
             attackSignal = INCORRECT;
           }
         } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
           if (treasureType == 2) {
             attackSignal = CORRECT;
+
             //do an animation?
             damageAnimTimer.set(DAMAGE_ANIM_TIME);
+
           } else {
             attackSignal = INCORRECT;
           }

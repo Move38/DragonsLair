@@ -138,6 +138,7 @@ void loop() {
         blinkType = PLAYER;
         isDead = false;
         luck = 3;
+        playerScore = 0;
       }
 
     }
@@ -244,8 +245,6 @@ void inertLoop() {
   if (blinkType == PLAYER) {
     if (luck < 1) {
       isDead = true;
-      scoreCountdown = playerScore;
-      delayTimer.set(SCOREBOARD_DELAY);
     }
     //listen for damage
     FOREACH_FACE(f) {
@@ -253,10 +252,7 @@ void inertLoop() {
         if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
           if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
             if (ignoredFaces[f] == 0) {//take damage
-              luck--;
-              damageAnimTimer.set(DAMAGE_ANIM_TIME);
-              takingDamage = true;
-              ignoredFaces[f] = 1;
+              takeDamage(f);
             }
           }
         }
@@ -271,7 +267,7 @@ void inertLoop() {
           if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
             if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
               if (ignoredFaces[f] == 0) {
-                if (permanentPlayerFaceType[f] == 4) {
+                if (f == 4) {
                   playerScore += 3;
                 } else {
                   playerScore++;
@@ -284,10 +280,7 @@ void inertLoop() {
               takingDamage = false;
             } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
               if (ignoredFaces[f] == 0) {//take damage
-                luck--;
-                damageAnimTimer.set(DAMAGE_ANIM_TIME);
-                takingDamage = true;
-                ignoredFaces[f] = 1;
+                takeDamage(f);
               }
               playerFaceSignal[f] = INCORRECT;
             }
@@ -300,6 +293,15 @@ void inertLoop() {
     }
 
   }
+}
+
+void takeDamage(byte face) {
+  luck--;
+  delayTimer.set(SCOREBOARD_DELAY * 3);
+  damageAnimTimer.set(DAMAGE_ANIM_TIME);
+  scoreCountdown = playerScore + 1;//this is done because the display code misses 1
+  takingDamage = true;
+  ignoredFaces[face] = 1;
 }
 
 void fireLoop() {
@@ -507,9 +509,20 @@ void scoreDisplay() {
     } else {
       //this is the big long reset
       delayTimer.set(SCOREBOARD_DELAY * 2);
+      scoreCountdown = playerScore;
     }
-  } else if (delayTimer.getRemaining() < SCOREBOARD_DELAY / 2) {
-    setColor(WHITE);
+  } else if (delayTimer.getRemaining() < (SCOREBOARD_DELAY / 2)) {
+    //do the FLASH!
+    if (scoreCountdown > 100) {
+      setColorOnFace(YELLOW, 0);
+      setColorOnFace(YELLOW, 1);
+    } else if (scoreCountdown > 10) {
+      setColorOnFace(GREEN, 2);
+      setColorOnFace(GREEN, 3);
+    } else if (scoreCountdown > 1) {
+      setColorOnFace(RUBY, 4);
+      setColorOnFace(RUBY, 5);
+    }
   }
 }
 

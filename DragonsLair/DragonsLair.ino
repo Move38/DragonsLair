@@ -1,4 +1,5 @@
-#define FIELD_COLOR makeColorHSB(200,60,100)
+
+const Color FIELD_COLOR = makeColorHSB(200,60,100);
 
 #define MAX_GAME_TIME 240000 //four Minutes
 #define MAX_TIME_BETWEEN_ATTACKS 10000

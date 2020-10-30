@@ -1,5 +1,5 @@
 
-const Color FIELD_COLOR = makeColorHSB(200,60,100);
+const Color FIELD_COLOR = makeColorHSB(200, 60, 100);
 
 #define MAX_GAME_TIME 240000 //four Minutes
 #define MAX_TIME_BETWEEN_ATTACKS 10000
@@ -20,6 +20,7 @@ Timer gameTimer;
 #define IGNORE_TIME 700
 #define GOLD_MINE_TIME 6000 //cause half of that is 3 sec.
 #define TREASURE_SPAWN_TIME 2000
+#define SCOREBOARD_DELAY 400
 
 //[A][B][C][D][E][F]
 
@@ -33,7 +34,9 @@ byte playerFaceSignal[6] = {FIRE, INERT, POISON, INERT, VOID, INERT}; //attacks 
 byte permanentPlayerFaceType[6] = {FIRE, INERT, POISON, INERT, VOID, INERT};
 bool isDragon = false;
 
-byte playerScore = 0;
+int playerScore = 0;
+int scoreCountdown = 0;
+
 byte ignoredFaces[6] = {0, 0, 0, 0, 0, 0};
 byte luck = 3;
 bool isDead = false;
@@ -42,7 +45,8 @@ Timer damageAnimTimer;
 bool takingDamage = false;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
-Color treasureColor[3] = {RED, GREEN, YELLOW};
+#define RUBY makeColorHSB( 10, 230, 255)
+Color treasureColor[3] = {RUBY, GREEN, YELLOW};
 
 byte extraTime = 0; //for setting the delay longer based on attack type
 
@@ -57,7 +61,7 @@ Timer treasureSpawnTimer;
 #define DRAGON_SPIN_INTERVAL 600
 #define DRAGON_FADE_SPEED 4
 
-const Color dragon_color = makeColorHSB( 10, 230, 255);
+const Color dragon_color = RED;
 
 byte dragonFaceProgress[6] = {0, 0, 0, 0, 0, 0};
 byte dragonMessageFace = 0;
@@ -240,6 +244,8 @@ void inertLoop() {
   if (blinkType == PLAYER) {
     if (luck < 1) {
       isDead = true;
+      scoreCountdown = playerScore;
+      delayTimer.set(SCOREBOARD_DELAY);
     }
     //listen for damage
     FOREACH_FACE(f) {
@@ -259,37 +265,40 @@ void inertLoop() {
       }
     }
     // Player mining
-    FOREACH_FACE(f) {
-      if (!isValueReceivedOnFaceExpired(f)) {
-        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
-          if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
-            if (ignoredFaces[f] == 0) {
-              if (permanentPlayerFaceType[f] == 4) {
-                playerScore += 3;
-              } else {
-                playerScore++;
+    if (!isDead) {
+      FOREACH_FACE(f) {
+        if (!isValueReceivedOnFaceExpired(f)) {
+          if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+            if (getAttackSignal(getLastValueReceivedOnFace(f)) == CORRECT) {
+              if (ignoredFaces[f] == 0) {
+                if (permanentPlayerFaceType[f] == 4) {
+                  playerScore += 3;
+                } else {
+                  playerScore++;
+                }
+                ignoredFaces[f] = 1;
               }
-              ignoredFaces[f] = 1;
-            }
-            playerFaceSignal[f] = CORRECT;
-            //also set the damage timer
-            damageAnimTimer.set(DAMAGE_ANIM_TIME);
-            takingDamage = false;
-          } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
-            if (ignoredFaces[f] == 0) {//take damage
-              luck--;
+              playerFaceSignal[f] = CORRECT;
+              //also set the damage timer
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
-              takingDamage = true;
-              ignoredFaces[f] = 1;
+              takingDamage = false;
+            } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
+              if (ignoredFaces[f] == 0) {//take damage
+                luck--;
+                damageAnimTimer.set(DAMAGE_ANIM_TIME);
+                takingDamage = true;
+                ignoredFaces[f] = 1;
+              }
+              playerFaceSignal[f] = INCORRECT;
             }
-            playerFaceSignal[f] = INCORRECT;
           }
+        } else {
+          ignoredFaces[f] = 0;
+          playerFaceSignal[f] = permanentPlayerFaceType[f];
         }
-      } else {
-        ignoredFaces[f] = 0;
-        playerFaceSignal[f] = permanentPlayerFaceType[f];
       }
     }
+
   }
 }
 
@@ -479,7 +488,29 @@ void playerDisplay() {
 }
 
 void scoreDisplay() {
-  setColor(WHITE);
+
+  setColorOnFace(dim(YELLOW, 100), 0);
+  setColorOnFace(dim(YELLOW, 100), 1);
+  setColorOnFace(dim(GREEN, 100), 2);
+  setColorOnFace(dim(GREEN, 100), 3);
+  setColorOnFace(dim(RUBY, 100), 4);
+  setColorOnFace(dim(RUBY, 100), 5);
+
+  if (delayTimer.isExpired()) {//each time the timer expires, we reset it and do some quick maffs
+    delayTimer.set(SCOREBOARD_DELAY);
+    if (scoreCountdown > 100) {
+      scoreCountdown -= 100;
+    } else if (scoreCountdown > 10) {
+      scoreCountdown -= 10;
+    } else if (scoreCountdown > 1) {
+      scoreCountdown -= 1;
+    } else {
+      //this is the big long reset
+      delayTimer.set(SCOREBOARD_DELAY * 2);
+    }
+  } else if (delayTimer.getRemaining() < SCOREBOARD_DELAY / 2) {
+    setColor(WHITE);
+  }
 }
 
 #define FIRE_HUE_MIN 0
@@ -493,10 +524,10 @@ void fireDisplay() {
 
   FOREACH_FACE(f) {
 
-//    setColorOnFace(makeColorHSB(  random(25), progress, 255), f);
+    //    setColorOnFace(makeColorHSB(  random(25), progress, 255), f);
 
     // Placeholder for smaller fire animation
-    setColorOnFace( RED , f);
+    setColorOnFace( ORANGE , f);
 
     //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
     //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {

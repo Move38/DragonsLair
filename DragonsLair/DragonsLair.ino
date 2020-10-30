@@ -64,8 +64,7 @@ byte nextAttack = FIRE;
 
 void setup() {
   randomize();
-  byte randomTreasure = random(99);
-  treasureType = (randomTreasure % 3) + 1;
+  treasureType = random(2) + 1;
   blinkType = FIELD;
 }
 

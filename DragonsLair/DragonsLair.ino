@@ -20,7 +20,7 @@ Timer gameTimer;
 #define IGNORE_TIME 700
 #define GOLD_MINE_TIME 6000 //cause half of that is 3 sec.
 #define TREASURE_SPAWN_TIME 2000
-#define SCOREBOARD_DELAY 400
+#define SCOREBOARD_DELAY 800
 
 //[A][B][C][D][E][F]
 
@@ -79,13 +79,16 @@ void loop() {
       inertLoop();
       break;
     case FIRE:
-      fireLoop();
+      attackLoop();
+      treasureType = 0;
+      treasureSpawnTimer.set(TREASURE_SPAWN_TIME / 2);
       break;
     case POISON:
-      poisonLoop();
+      attackLoop();
       break;
     case VOID:
-      voidLoop();
+      attackLoop();
+      miningLoop();
       break;
     case RESOLVE:
       resolveLoop();
@@ -304,55 +307,11 @@ void takeDamage(byte face) {
   ignoredFaces[face] = 1;
 }
 
-void fireLoop() {
-  if (attackDurationTimer.isExpired()) {
-    attackSignal = RESOLVE;
-    treasureType = 0;
-    treasureSpawnTimer.set(TREASURE_SPAWN_TIME / 2);
-  }
 
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = FIRE;
-  //        }
-  //      }
-  //    }
-  //  }
-}
-
-void poisonLoop() {
+void attackLoop() {
   if (attackDurationTimer.isExpired()) {
     attackSignal = RESOLVE;
   }
-
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = POISON;
-  //        }
-  //      }
-  //    }
-  //  }
-}
-
-void voidLoop() {
-  if (attackDurationTimer.isExpired()) {
-    attackSignal = RESOLVE;
-  }
-  //  FOREACH_FACE(f) {
-  //    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-  //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIELD) {
-  //        if (getAttackSignal(getLastValueReceivedOnFace(f)) == INERT) {
-  //          attackSignal = VOID;
-  //        }
-  //      }
-  //    }
-  //  }
-
-  miningLoop();
 }
 
 void resolveLoop() {
@@ -499,7 +458,9 @@ void scoreDisplay() {
   setColorOnFace(dim(RUBY, 100), 5);
 
   if (delayTimer.isExpired()) {//each time the timer expires, we reset it and do some quick maffs
+
     delayTimer.set(SCOREBOARD_DELAY);
+
     if (scoreCountdown > 100) {
       scoreCountdown -= 100;
     } else if (scoreCountdown > 10) {
@@ -509,7 +470,7 @@ void scoreDisplay() {
     } else {
       //this is the big long reset
       delayTimer.set(SCOREBOARD_DELAY * 2);
-      scoreCountdown = playerScore;
+      scoreCountdown = playerScore + 1;
     }
   } else if (delayTimer.getRemaining() < (SCOREBOARD_DELAY / 2)) {
     //do the FLASH!

@@ -489,7 +489,10 @@ void fireDisplay() {
 
   FOREACH_FACE(f) {
 
-    setColorOnFace(makeColorHSB(random(25), progress, 255), f);
+//    setColorOnFace(makeColorHSB(  random(25), progress, 255), f);
+
+    // Placeholder for smaller fire animation
+    setColorOnFace( RED , f);
 
     //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
     //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {

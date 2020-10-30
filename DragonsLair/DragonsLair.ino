@@ -186,7 +186,7 @@ void inertLoop() {
     //treasure spawning
     if (treasureSpawnTimer.isExpired()) {
       if (treasureType == 0) {
-        treasureType = (random(99) % 3) + 1;
+        treasureType = random(2)  + 1;
       }
     }
 

@@ -56,7 +56,8 @@ Timer treasureSpawnTimer;
 
 #define DRAGON_SPIN_INTERVAL 600
 #define DRAGON_FADE_SPEED 4
-#define DRAGON_COLOR makeColorHSB( 10, 230, 255)
+
+const Color dragon_color = makeColorHSB( 10, 230, 255);
 
 byte dragonFaceProgress[6] = {0, 0, 0, 0, 0, 0};
 byte dragonMessageFace = 0;
@@ -533,7 +534,7 @@ void voidDisplay() {
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning
-  dragonMessageFace = ((millis() % DRAGON_SPIN_INTERVAL) / (DRAGON_SPIN_INTERVAL / 6)) % 6;
+  dragonMessageFace = ((millis() % DRAGON_SPIN_INTERVAL) / (DRAGON_SPIN_INTERVAL / 6)) % 6; // 35 bytes -josh
 
   FOREACH_FACE(f) {
     if (f != dragonMessageFace) {
@@ -548,7 +549,7 @@ void dragonDisplay() {
     }
 
     //now that we've done the math, set some color!
-    setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+    setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
 
   }
 
@@ -627,7 +628,7 @@ void fieldDisplay() {
     }
     //then display dragon sturf
     if (dragonFaceProgress[f] > 0) {
-      setColorOnFace(dim(DRAGON_COLOR, dragonFaceProgress[f]), f);
+      setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
     }
 
   }

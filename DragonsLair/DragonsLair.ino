@@ -243,13 +243,9 @@ void inertLoop() {
     }
     //listen for damage
     FOREACH_FACE(f) {
-      
       if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-
-        byte lastValueReceived = getLastValueReceivedOnFace(f);
-        
-        if (getBlinkType(lastValueReceived) == FIELD) {
-          if (getAttackSignal(lastValueReceived) == FIRE || getAttackSignal(lastValueReceived) == POISON) {
+        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
             if (ignoredFaces[f] == 0) {//take damage
               luck--;
               damageAnimTimer.set(DAMAGE_ANIM_TIME);

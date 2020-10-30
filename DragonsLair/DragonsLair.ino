@@ -46,6 +46,7 @@ bool takingDamage = false;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 #define RUBY makeColorHSB( 10, 230, 255)
+#define POISON_COLOR makeColorRGB(0,255,30)
 Color treasureColor[3] = {RUBY, GREEN, YELLOW};
 
 byte extraTime = 0; //for setting the delay longer based on attack type
@@ -404,13 +405,13 @@ void displayLoop() {
   } else if (blinkType == FIELD) {
     switch (attackSignal) {
       case FIRE:
-        fireDisplay();
+        attackDisplay(ORANGE);
         break;
       case POISON:
-        poisonDisplay();
+        attackDisplay(POISON_COLOR);
         break;
       case VOID:
-        voidDisplay();
+        attackDisplay(makeColorRGB(20, 0, 50));
         break;
       case INERT:
       case RESOLVE:
@@ -487,61 +488,13 @@ void scoreDisplay() {
   }
 }
 
-#define FIRE_HUE_MIN 0
-#define FIRE_HUE_MAX 25
-
-void fireDisplay() {
-  //so there's a timer that governs some of the animation
-  //but also we want to be concious of which sides are touching other fire
-
-  byte progress = 255 - map(attackDurationTimer.getRemaining(), 0, FIRE_DURATION, 0, 150);
-
+void attackDisplay(Color attackColor) {
   FOREACH_FACE(f) {
-
-    //    setColorOnFace(makeColorHSB(  random(25), progress, 255), f);
-
-    // Placeholder for smaller fire animation
-    setColorOnFace( ORANGE , f);
-
-    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE) {
-    //        setColorOnFace(makeColorHSB(random(25), progress, 150), f);
-    //      } else {
-    //        setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-    //      }
-    //    } else {
-    //      setColorOnFace(makeColorHSB(random(25), progress, 255), f);
-    //    }
-
-  }
-}
-
-#define POISON_COLOR makeColorRGB(0,255,30)
-
-void poisonDisplay() {
-  FOREACH_FACE(f) {
-
-    setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
-
-    //    if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
-    //      if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {//neighbor is poison
-    //        setColorOnFace(dim(POISON_COLOR, random(100) + 155), f);
-    //      } else {//neighbor is not poison
-    //        setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-    //      }
-    //    } else {//no neighbor
-    //      setColorOnFace(dim(POISON_COLOR, random(155) + 50), f);
-    //    }
-
+    setColorOnFace(dim(attackColor, random(100) + 155), f);
   }
 }
 
 #define PREVIEW_TIME 250
-
-void voidDisplay() {
-  setColor(OFF);
-  setColorOnFace(dim(BLUE, 55), random(5));
-}
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning

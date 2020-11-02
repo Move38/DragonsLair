@@ -322,6 +322,8 @@ void attackLoop() {
   }
 }
 
+int previewTime = 400;
+
 void resolveLoop() {
   attackSignal = INERT;
 
@@ -329,9 +331,10 @@ void resolveLoop() {
 
   //determine how long my next waiting period is
   byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+  previewTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) / 4;
 
   if (isDragon) {
-    dragonWaitTimer.set(map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
+    dragonWaitTimer.set((previewTime * 4) + extraTime);
 
     //determine next attack
     switch (random(2)) {
@@ -513,7 +516,8 @@ void attackDisplay(Color attackColor) {
   }
 }
 
-#define PREVIEW_TIME 250
+#define MAX_PREVIEW_TIME 400
+#define MIN_PREVIEW_TIME 100
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning
@@ -535,8 +539,9 @@ void dragonDisplay() {
     setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
 
   }
+  //int previewTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_PREVIEW_TIME, MAX_PREVIEW_TIME);
 
-  if (dragonWaitTimer.getRemaining() < PREVIEW_TIME) {//we should be showing the next attack
+  if (dragonWaitTimer.getRemaining() < previewTime) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
         setColorOnFace(ORANGE, random(5));

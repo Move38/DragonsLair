@@ -473,8 +473,7 @@ void playerDisplay() {
 
 void scoreDisplay() {
 
-  setColorOnFace(dim(YELLOW, 100), 0);
-  setColorOnFace(dim(YELLOW, 100), 1);
+  setColor(dim(YELLOW, 100));
   setColorOnFace(dim(EMERALD, 100), 2);
   setColorOnFace(dim(EMERALD, 100), 3);
   setColorOnFace(dim(RUBY, 100), 4);
@@ -544,6 +543,7 @@ void dragonDisplay() {
   if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
+        //setColor(dim(dragon_color, 100));
         setColorOnFace(ORANGE, random(5));
         //setColorOnFace(ORANGE, random(5));
         break;

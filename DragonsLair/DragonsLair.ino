@@ -109,21 +109,22 @@ void loop() {
     byte clicks = buttonClickCount();
     if (clicks == 3) {
       isDragon = !isDragon;
+      attackSignal = RESOLVE;
       dragonWaitTimer.set(DRAGON_WAIT_TIME);
       gameTimer.set(MAX_GAME_TIME);
 
       //determine next attack
-      switch (random(2)) {
-        case 0:
-          nextAttack = FIRE;
-          break;
-        case 1:
-          nextAttack = POISON;
-          break;
-        case 2:
-          nextAttack = VOID;
-          break;
-      }
+      //      switch (random(2)) {
+      //        case 0:
+      //          nextAttack = FIRE;
+      //          break;
+      //        case 1:
+      //          nextAttack = POISON;
+      //          break;
+      //        case 2:
+      //          nextAttack = VOID;
+      //          break;
+      //      }
     }
   }
 
@@ -543,7 +544,7 @@ void dragonDisplay() {
   if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
-        //setColor(dim(dragon_color, 100));
+        setColor(dim(dragon_color, 100));
         setColorOnFace(ORANGE, random(5));
         //setColorOnFace(ORANGE, random(5));
         break;

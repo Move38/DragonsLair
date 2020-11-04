@@ -109,21 +109,22 @@ void loop() {
     byte clicks = buttonClickCount();
     if (clicks == 3) {
       isDragon = !isDragon;
+      attackSignal = RESOLVE;
       dragonWaitTimer.set(DRAGON_WAIT_TIME);
       gameTimer.set(MAX_GAME_TIME);
 
       //determine next attack
-      switch (random(2)) {
-        case 0:
-          nextAttack = FIRE;
-          break;
-        case 1:
-          nextAttack = POISON;
-          break;
-        case 2:
-          nextAttack = VOID;
-          break;
-      }
+      //      switch (random(2)) {
+      //        case 0:
+      //          nextAttack = FIRE;
+      //          break;
+      //        case 1:
+      //          nextAttack = POISON;
+      //          break;
+      //        case 2:
+      //          nextAttack = VOID;
+      //          break;
+      //      }
     }
   }
 
@@ -322,6 +323,8 @@ void attackLoop() {
   }
 }
 
+int waitTime = 10000;
+
 void resolveLoop() {
   attackSignal = INERT;
 
@@ -329,9 +332,10 @@ void resolveLoop() {
 
   //determine how long my next waiting period is
   byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+  waitTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
 
   if (isDragon) {
-    dragonWaitTimer.set(map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS) + extraTime);
+    dragonWaitTimer.set(waitTime + extraTime);
 
     //determine next attack
     switch (random(2)) {
@@ -470,8 +474,7 @@ void playerDisplay() {
 
 void scoreDisplay() {
 
-  setColorOnFace(dim(YELLOW, 100), 0);
-  setColorOnFace(dim(YELLOW, 100), 1);
+  setColor(dim(YELLOW, 100));
   setColorOnFace(dim(EMERALD, 100), 2);
   setColorOnFace(dim(EMERALD, 100), 3);
   setColorOnFace(dim(RUBY, 100), 4);
@@ -513,7 +516,8 @@ void attackDisplay(Color attackColor) {
   }
 }
 
-#define PREVIEW_TIME 250
+#define MAX_PREVIEW_TIME 400
+#define MIN_PREVIEW_TIME 100
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning
@@ -535,10 +539,12 @@ void dragonDisplay() {
     setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
 
   }
+  //int previewTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_PREVIEW_TIME, MAX_PREVIEW_TIME);
 
-  if (dragonWaitTimer.getRemaining() < PREVIEW_TIME) {//we should be showing the next attack
+  if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
+        setColor(dim(dragon_color, 100));
         setColorOnFace(ORANGE, random(5));
         //setColorOnFace(ORANGE, random(5));
         break;

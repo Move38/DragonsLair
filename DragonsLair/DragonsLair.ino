@@ -331,8 +331,9 @@ void resolveLoop() {
   //  ignoreAttacksTimer.set(IGNORE_TIME);
 
   //determine how long my next waiting period is
-  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
-  waitTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
+  //  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+  //  waitTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
+  waitTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
 
   if (isDragon) {
     dragonWaitTimer.set(waitTime + extraTime);
@@ -452,13 +453,13 @@ void playerDisplay() {
 
       switch (typeGained) {
         case FIRE:
-          attackDisplay(RUBY);
+          impactDisplay(RUBY, 0);
           break;
         case POISON:
-          attackDisplay(EMERALD);
+          impactDisplay(EMERALD, 2);
           break;
         case VOID:
-          attackDisplay(YELLOW);
+          impactDisplay(YELLOW, 4);
           break;
       }
 
@@ -516,12 +517,35 @@ void attackDisplay(Color attackColor) {
   }
 }
 
+void impactDisplay(Color displayColor, byte impactFace) {
+
+  byte animFrame = (DAMAGE_ANIM_TIME - damageAnimTimer.getRemaining()) /  (DAMAGE_ANIM_TIME / 8);
+
+  FOREACH_FACE(f) {
+    //so first, am what level of animation am I? the answers range from 0 - 3
+    byte animType = 0;
+    if (abs(f - impactFace) == 1 || abs(f - impactFace) == 5) {
+      animType = 1;
+    } else if (abs(f - impactFace) == 2 || abs(f - impactFace) == 4) {
+      animType = 2;
+    } else if (abs(f - impactFace) == 3) {
+      animType = 3;
+    }
+    //if the current frame is equal to my type or 4 greater, then I do the lights
+    if (animType <= animFrame) {
+      setColorOnFace(displayColor, f);
+    }
+  }
+
+}
+
 #define MAX_PREVIEW_TIME 400
 #define MIN_PREVIEW_TIME 100
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning
   dragonMessageFace = ((millis() % DRAGON_SPIN_INTERVAL) / (DRAGON_SPIN_INTERVAL / 6)) % 6; // 35 bytes -josh
+  //dragonMessageFace = (millis() / DRAGON_SPIN_INTERVAL) % 6;
 
   FOREACH_FACE(f) {
     if (f != dragonMessageFace) {
@@ -539,7 +563,6 @@ void dragonDisplay() {
     setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
 
   }
-  //int previewTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_PREVIEW_TIME, MAX_PREVIEW_TIME);
 
   if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {

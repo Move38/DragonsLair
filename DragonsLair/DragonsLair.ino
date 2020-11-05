@@ -47,6 +47,7 @@ byte typeGained = FIRE;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 #define RUBY makeColorHSB( 10, 210, 255)
+#define DIM_RUBY makeColorHSB( 10, 210, 100)
 #define POISON_COLOR makeColorRGB(0,255,100)
 #define EMERALD GREEN//this is redundant, but if I can make space I'll make a new emerald
 Color treasureColor[3] = {RUBY, EMERALD, YELLOW};
@@ -64,7 +65,7 @@ Timer treasureSpawnTimer;
 #define DRAGON_SPIN_INTERVAL 600
 #define DRAGON_FADE_SPEED 4
 
-const Color dragon_color = RED;
+//const Color dragon_color = RED;
 
 byte dragonFaceProgress[6] = {0, 0, 0, 0, 0, 0};
 byte dragonMessageFace = 0;
@@ -136,7 +137,6 @@ void loop() {
 
   //PLAYER Pieces
   //sets the player piece
-  if (isAlone()) {
     if (buttonDoubleClicked()) {
       if (blinkType == PLAYER) {
         blinkType = FIELD;
@@ -149,7 +149,7 @@ void loop() {
       }
 
     }
-  }
+
 
   if (blinkType == FIELD) {
     sendData = (blinkType << 5) + (attackSignal << 2);
@@ -255,16 +255,12 @@ void inertLoop() {
     }
     //listen for damage
     FOREACH_FACE(f) {
-      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
-        if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
+      if (!isValueReceivedOnFaceExpired(f)) { //a neighbor!
+        if (getLastValueReceivedOnFace(f) == FIELD) {
           if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
-            if (ignoredFaces[f] == 0) {//take damage
               takeDamage(f);
-            }
           }
         }
-      } else {
-        ignoredFaces[f] = 0;
       }
     }
     // Player mining
@@ -331,9 +327,10 @@ void resolveLoop() {
   //  ignoreAttacksTimer.set(IGNORE_TIME);
 
   //determine how long my next waiting period is
-  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
-  waitTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
-
+  //  byte gameProgress = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, 0, 255);
+  //  waitTime = map(gameProgress, 0, 255, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
+//  waitTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_TIME_BETWEEN_ATTACKS, MAX_TIME_BETWEEN_ATTACKS);
+  waitTime = MIN_TIME_BETWEEN_ATTACKS + ((((MAX_TIME_BETWEEN_ATTACKS-MIN_TIME_BETWEEN_ATTACKS)*100)/MAX_GAME_TIME)*(gameTimer.getRemaining()/100));
   if (isDragon) {
     dragonWaitTimer.set(waitTime + extraTime);
 
@@ -352,7 +349,7 @@ void resolveLoop() {
   }
 
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
+    if (!isValueReceivedOnFaceExpired(f)) { //a neighbor!
       if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
         if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON || getAttackSignal(getLastValueReceivedOnFace(f)) == VOID) { //This neighbor isn't in RESOLVE. Stay in RESOLVE
           attackSignal = RESOLVE;
@@ -475,10 +472,10 @@ void playerDisplay() {
 void scoreDisplay() {
 
   setColor(dim(YELLOW, 100));
-  setColorOnFace(dim(EMERALD, 100), 2);
-  setColorOnFace(dim(EMERALD, 100), 3);
-  setColorOnFace(dim(RUBY, 100), 4);
-  setColorOnFace(dim(RUBY, 100), 5);
+  setColorOnFace(dim(GREEN, 100), 2);
+  setColorOnFace(dim(GREEN, 100), 3);
+  setColorOnFace(DIM_RUBY, 4);
+  setColorOnFace(DIM_RUBY, 5);
 
   if (delayTimer.isExpired()) {//each time the timer expires, we reset it and do some quick maffs
 
@@ -516,12 +513,33 @@ void attackDisplay(Color attackColor) {
   }
 }
 
+void impactDisplay(Color displayColor, byte impactFace) {
+
+  byte animFrame = (DAMAGE_ANIM_TIME - damageAnimTimer.getRemaining()) /  (DAMAGE_ANIM_TIME / 8);
+
+  FOREACH_FACE(f) {
+    //so first, am what level of animation am I? the answers range from 0 - 3
+    byte animType = 3;
+    if (abs(f - impactFace) == 2 || abs(f - impactFace) == 4) {
+      animType = 2;
+    } else if (abs(f - impactFace) == 3) {
+      animType = 1;
+    }
+    //if the current frame is equal to my type or 4 greater, then I do the lights
+    if (animType >= animFrame) {
+      setColorOnFace(displayColor, f);
+    }
+  }
+
+}
+
 #define MAX_PREVIEW_TIME 400
 #define MIN_PREVIEW_TIME 100
 
 void dragonDisplay() {
   //so we want to do a little animation about spinning
   dragonMessageFace = ((millis() % DRAGON_SPIN_INTERVAL) / (DRAGON_SPIN_INTERVAL / 6)) % 6; // 35 bytes -josh
+  //dragonMessageFace = (millis() / DRAGON_SPIN_INTERVAL) % 6;
 
   FOREACH_FACE(f) {
     if (f != dragonMessageFace) {
@@ -536,15 +554,14 @@ void dragonDisplay() {
     }
 
     //now that we've done the math, set some color!
-    setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
+    setColorOnFace(dim(RED, dragonFaceProgress[f]), f);
 
   }
-  //int previewTime = map(gameTimer.getRemaining(), 0, MAX_GAME_TIME, MIN_PREVIEW_TIME, MAX_PREVIEW_TIME);
 
   if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
-        setColor(dim(dragon_color, 100));
+        setColor(dim(RED, 100));
         setColorOnFace(ORANGE, random(5));
         //setColorOnFace(ORANGE, random(5));
         break;
@@ -560,6 +577,9 @@ void dragonDisplay() {
   }
 
 }
+
+byte impactFace = 0;
+byte impactColor = 0;
 
 void fieldDisplay() {
 
@@ -617,11 +637,13 @@ void fieldDisplay() {
     }
     //then display dragon sturf
     if (dragonFaceProgress[f] > 0) {
-      setColorOnFace(dim(dragon_color, dragonFaceProgress[f]), f);
+      setColorOnFace(dim(RED, dragonFaceProgress[f]), f);
     }
 
     if (!damageAnimTimer.isExpired()) {
-      attackDisplay(WHITE);
+
+      impactDisplay(treasureColor[impactColor], impactFace);
+      //attackDisplay(WHITE);
       //setColorOnFace(dim(WHITE, random(255)), f);
     }
 
@@ -642,6 +664,8 @@ void miningLoop() {
             attackSignal = CORRECT;
             //do an animation?
             damageAnimTimer.set(DAMAGE_ANIM_TIME);
+            impactFace = f;
+            impactColor = 0;
 
           } else {
             attackSignal = INCORRECT;
@@ -649,6 +673,8 @@ void miningLoop() {
         } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
           if (treasureType == 2) {
             attackSignal = CORRECT;
+            impactFace = f;
+            impactColor = 1;
 
             //do an animation?
             damageAnimTimer.set(DAMAGE_ANIM_TIME);
@@ -664,6 +690,8 @@ void miningLoop() {
               attackSignal = CORRECT;
               //do an animation?
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
+              impactFace = f;
+              impactColor = 2;
             }
           } else {
             attackSignal = INCORRECT;

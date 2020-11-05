@@ -47,6 +47,7 @@ byte typeGained = FIRE;
 
 byte treasureType = 0; // 1 for ruby, 2 for emerald, 3 for Gold
 #define RUBY makeColorHSB( 10, 210, 255)
+#define DIM_RUBY makeColorHSB( 10, 210, 100)
 #define POISON_COLOR makeColorRGB(0,255,100)
 #define EMERALD GREEN//this is redundant, but if I can make space I'll make a new emerald
 Color treasureColor[3] = {RUBY, EMERALD, YELLOW};
@@ -484,10 +485,6 @@ void playerDisplay() {
   }
 }
 
-//#define DIM_EMERALD dim(GREEN, 100)
-#define DIM_RUBY dim(RUBY, 100)
-//#define DIM_YELLOW dim(YELLOW, 100)
-
 void scoreDisplay() {
 
   setColor(dim(YELLOW, 100));
@@ -538,10 +535,8 @@ void impactDisplay(Color displayColor, byte impactFace) {
 
   FOREACH_FACE(f) {
     //so first, am what level of animation am I? the answers range from 0 - 3
-    byte animType = 0;
-    if (abs(f - impactFace) == 1 || abs(f - impactFace) == 5) {
-      animType = 3;
-    } else if (abs(f - impactFace) == 2 || abs(f - impactFace) == 4) {
+    byte animType = 3;
+    if (abs(f - impactFace) == 2 || abs(f - impactFace) == 4) {
       animType = 2;
     } else if (abs(f - impactFace) == 3) {
       animType = 1;

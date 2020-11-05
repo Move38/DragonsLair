@@ -151,6 +151,7 @@ void loop() {
     }
 
 
+
   if (blinkType == FIELD) {
     sendData = (blinkType << 5) + (attackSignal << 2);
     setValueSentOnAllFaces(sendData);
@@ -253,18 +254,13 @@ void inertLoop() {
     if (luck < 1) {
       isDead = true;
     }
-    //listen for damage
-    FOREACH_FACE(f) {
-      if (!isValueReceivedOnFaceExpired(f)) { //a neighbor!
-        if (getLastValueReceivedOnFace(f) == FIELD) {
-          if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {
-              takeDamage(f);
-          }
-        }
-      }
-    }
+
+
     // Player mining
     if (!isDead) {
+      if (isAlone()){
+        takingDamage = false;
+      }
       FOREACH_FACE(f) {
         if (!isValueReceivedOnFaceExpired(f)) {
           if (getBlinkType(getLastValueReceivedOnFace(f)) == FIELD) {
@@ -285,12 +281,15 @@ void inertLoop() {
               playerFaceSignal[f] = CORRECT;
               //also set the damage timer
               damageAnimTimer.set(DAMAGE_ANIM_TIME);
-              takingDamage = false;
             } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == INCORRECT) {
               if (ignoredFaces[f] == 0) {//take damage
                 takeDamage(f);
               }
               playerFaceSignal[f] = INCORRECT;
+            } else if (getAttackSignal(getLastValueReceivedOnFace(f)) == FIRE || getAttackSignal(getLastValueReceivedOnFace(f)) == POISON) {     //listen for damage
+              if (takingDamage == false) {
+                takeDamage(f);
+              }
             }
           }
         } else {
@@ -299,7 +298,6 @@ void inertLoop() {
         }
       }
     }
-
   }
 }
 
@@ -319,7 +317,7 @@ void attackLoop() {
   }
 }
 
-int waitTime = 10000;
+int waitTime;
 
 void resolveLoop() {
   attackSignal = INERT;

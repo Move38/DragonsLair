@@ -109,6 +109,7 @@ void loop() {
   if (buttonMultiClicked()) {
     byte clicks = buttonClickCount();
     if (clicks == 3) {
+      blinkType = FIELD;
       isDragon = !isDragon;
       attackSignal = RESOLVE;
       dragonWaitTimer.set(DRAGON_WAIT_TIME);
@@ -142,6 +143,7 @@ void loop() {
         blinkType = FIELD;
 
       } else if (blinkType == FIELD) {
+        isDragon = false;
         blinkType = PLAYER;
         isDead = false;
         luck = 3;
@@ -433,7 +435,12 @@ void playerDisplay() {
   if (isDead) {
     scoreDisplay();
   } else {
-    setColor(FIELD_COLOR);
+    setColor(OFF);
+    FOREACH_FACE(f) {
+      if( f/2 < luck) {
+        setColorOnFace(FIELD_COLOR,f);
+      }
+    }
     setColorOnFace(RUBY, 0);
     setColorOnFace(EMERALD, 2);
     setColorOnFace(YELLOW, 4);
@@ -470,8 +477,8 @@ void playerDisplay() {
 void scoreDisplay() {
 
   setColor(dim(YELLOW, 100));
-  setColorOnFace(dim(GREEN, 100), 2);
-  setColorOnFace(dim(GREEN, 100), 3);
+  setColorOnFace(makeColorRGB(0,100,0), 2); // dim GREEN
+  setColorOnFace(makeColorRGB(0,100,0), 3); // dim GREEN
   setColorOnFace(DIM_RUBY, 4);
   setColorOnFace(DIM_RUBY, 5);
 
@@ -552,14 +559,14 @@ void dragonDisplay() {
     }
 
     //now that we've done the math, set some color!
-    setColorOnFace(dim(RED, dragonFaceProgress[f]), f);
+    setColorOnFace(makeColorRGB(dragonFaceProgress[f], 0, 0), f);
 
   }
 
   if (dragonWaitTimer.getRemaining() < (waitTime / 25)) {//we should be showing the next attack
     switch (nextAttack) {
       case FIRE:
-        setColor(dim(RED, 100));
+        setColor(makeColorRGB(100,0,0));
         setColorOnFace(ORANGE, random(5));
         //setColorOnFace(ORANGE, random(5));
         break;
